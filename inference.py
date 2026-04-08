@@ -229,9 +229,7 @@ def run_episode(
         verbose:    Print step-by-step progress.
     """
     if verbose:
-        print(f"\n{'='*60}")
-        print(f"Task: {task_id}")
-        print(f"{'='*60}")
+        print(f"START {task_id}")
 
     obs = env_client.reset(task_id=task_id)
 
@@ -339,7 +337,6 @@ def run_episode(
                 break
 
         if verbose:
-            print(f"\n[Step {step}/{max_steps}]")
             print(f"  Model: {assistant_text[:200]}...")
 
         # ── Parse action ─────────────────────────────────────────────────────
@@ -365,11 +362,7 @@ def run_episode(
         parse_retries = 0
 
         if verbose:
-            print(
-                f"  Action: {action.get('action_type')}"
-                f"  path={action.get('file_path', '')[:40]}"
-                f"  sel={action.get('selector', '')}"
-            )
+            print(f"STEP {step} {action.get('action_type', 'unknown')}")
 
         # ── Execute ─────────────────────────────────────────────────────────
         try:
@@ -485,8 +478,7 @@ def main() -> None:
         elapsed = time.time() - t0
         result["elapsed_seconds"] = round(elapsed, 1)
         results.append(result)
-        print(
-            f"\n[{task_id}]  score={result['final_score']:.3f}"
+        print(f"END {task_id} {result['final_score']:.3f}"
             f"  flows={result['flows_passing']}/{result['flows_total']}"
             f"  quality={result['code_quality_score']:.3f}"
             f"  visual={result['visual_score']:.3f}"
