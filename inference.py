@@ -372,7 +372,13 @@ def run_episode(
             )
 
         # ── Execute ─────────────────────────────────────────────────────────
-        obs = env_client.step(action)
+        try:
+            obs = env_client.step(action)
+        except Exception as step_exc:
+            # Step timed out or network error — treat as a non-fatal error and continue
+            print(f"  [step {step}] Step error (continuing): {step_exc}")
+            obs = {**obs, "last_action_error": f"Step error: {step_exc}", "done": False}
+            continue
 
         if verbose:
             if obs.get("last_action_error"):

@@ -508,7 +508,7 @@ class VibeCodingEnvironment(Environment):
 
     def _safe_title(self) -> str:
         try:
-            return self._page.title() if self._page else ""
+            return self._page.evaluate("document.title", timeout=3000) if self._page else ""
         except Exception:
             return ""
 
