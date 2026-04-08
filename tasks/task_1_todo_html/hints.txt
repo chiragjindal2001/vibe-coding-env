@@ -1,0 +1,42 @@
+HINTS for Todo HTML task:
+
+1. SINGLE FILE: Everything goes in index.html (HTML + <style> + <script>)
+
+2. KEY IDs (grader checks exact matches):
+   - id="todo-input"     → the text input
+   - id="add-btn"        → the add button
+   - id="todo-count"     → remaining count display
+   - class="todo-item"   → each list item wrapper
+   - class="todo-checkbox" → the checkbox inside each item
+   - class="delete-btn"  → the delete button inside each item
+   - class="completed"   → added to .todo-item when checkbox is checked
+
+3. JAVASCRIPT PATTERN:
+   function addTodo(text) {
+     const li = document.createElement('li');
+     li.className = 'todo-item';
+     li.innerHTML = `
+       <input type="checkbox" class="todo-checkbox">
+       <span class="todo-text">${text}</span>
+       <button class="delete-btn">Delete</button>
+     `;
+     li.querySelector('.todo-checkbox').addEventListener('change', function() {
+       li.classList.toggle('completed', this.checked);
+       updateCount();
+     });
+     li.querySelector('.delete-btn').addEventListener('click', function() {
+       li.remove();
+       updateCount();
+     });
+     document.getElementById('todo-list').appendChild(li);
+     updateCount();
+   }
+
+   function updateCount() {
+     const remaining = document.querySelectorAll('.todo-item:not(.completed)').length;
+     document.getElementById('todo-count').textContent = remaining + ' items remaining';
+   }
+
+4. ENTER KEY: Add keydown listener on #todo-input for Enter key
+
+5. CSS: Style .completed with text-decoration: line-through; opacity: 0.6;

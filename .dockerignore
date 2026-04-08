@@ -1,0 +1,10 @@
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.pytest_cache
+**/.ruff_cache
+.git
+.gitignore
+README.md
+# Temporary vibe_ workspaces created at runtime (not part of source)
+vibe_*

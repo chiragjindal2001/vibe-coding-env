@@ -1,0 +1,20 @@
+Build a Todo List app in a SINGLE index.html file (plain HTML + CSS + JavaScript, no frameworks).
+
+REQUIRED ELEMENTS (exact IDs/classes - grader checks these):
+  - <input id="todo-input">         : text input for new todo
+  - <button id="add-btn">           : button to add the todo
+  - <span id="todo-count">          : shows count of remaining (incomplete) todos
+  - Each todo item: <li class="todo-item"> or <div class="todo-item">
+  - Each todo's checkbox: <input class="todo-checkbox" type="checkbox">
+  - When checked: parent .todo-item gets class "completed" added
+  - Each todo's delete button: <button class="delete-btn">
+
+BEHAVIOR:
+  1. User types in #todo-input and clicks #add-btn → new .todo-item appears
+  2. Clicking .todo-checkbox → parent .todo-item gains class "completed"
+  3. Clicking .delete-btn → removes that .todo-item from the DOM
+  4. #todo-count shows number of non-completed todos (updates dynamically)
+  5. Pressing Enter in #todo-input also adds the todo
+
+STYLE: Make it look nice with CSS. Add a header, placeholder text, hover effects.
+The page title should be "Todo App" or similar (not just "Document").

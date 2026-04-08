@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "openenv-vibe-coding"
+version = "0.1.0"
+description = "OpenEnv environment: train AI agents to vibe code web apps with visual browser testing"
+requires-python = ">=3.10"
+dependencies = [
+    "openenv-core>=0.2.3",
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.24.0",
+    "playwright>=1.40.0",
+    "ruff>=0.1.0",
+    "pydantic>=2.0.0",
+    "starlette>=0.27.0",
+    "python-multipart",
+    "httpx>=0.25.0",
+    "openai>=1.0.0",
+]
+
+[project.scripts]
+vibe-coding-server = "server.app:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["server*", "tasks*", "graders*"]

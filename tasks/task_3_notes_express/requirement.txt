@@ -1,0 +1,40 @@
+Build a Notes app using Node.js + Express.js (single server.js file).
+
+The server serves both the HTML frontend AND the REST API.
+
+REST API ENDPOINTS:
+  GET    /api/notes        → return JSON array of all notes
+  POST   /api/notes        → create note (body: {title, content}), return new note
+  DELETE /api/notes/:id    → delete note by id, return {success: true}
+
+FRONTEND (served at GET /):
+  The server should serve an HTML page that:
+  - Fetches notes from /api/notes on load and displays them
+  - Has a form to add new notes
+  - Shows note count
+
+PRE-SEEDED DATA (must exist when server starts, in memory):
+  Note 1: { id: 1, title: "Welcome", content: "Welcome to Notes App!", date: "2024-01-01" }
+  Note 2: { id: 2, title: "Getting Started", content: "Click Add Note to create your first note.", date: "2024-01-01" }
+
+REQUIRED HTML ELEMENTS (grader checks exact IDs/classes):
+  - <div id="notes-container">     : container where note cards are rendered
+  - <div class="note-card">        : each note's card element
+  - <span id="note-count">         : shows total number of notes
+  - <input id="note-title">        : input for new note title
+  - <textarea id="note-content">   : textarea for new note content
+  - <button id="add-note-btn">     : button to submit new note
+  - <button class="delete-btn">    : delete button on each note card
+
+BEHAVIOR:
+  1. On page load: fetch /api/notes, render .note-card for each note in #notes-container
+  2. Clicking #add-note-btn: POST to /api/notes with title+content, refresh list
+  3. Clicking .delete-btn: DELETE /api/notes/:id, refresh list
+  4. #note-count updates whenever notes list changes
+
+TECH STACK: Node.js (built-in http) + Express.js
+  - Run with: node server.js
+  - Listens on port 8000
+  - package.json with express dependency
+
+FILE: server.js (single file, ~150-250 lines)

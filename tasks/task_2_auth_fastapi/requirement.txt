@@ -1,0 +1,45 @@
+Build a user authentication web app using FastAPI + Jinja2 templates.
+
+ROUTES REQUIRED:
+  GET  /              → redirect to /login (or show landing page)
+  GET  /login         → show login form
+  POST /login         → authenticate user, redirect to /dashboard on success
+  GET  /register      → show registration form
+  POST /register      → create new user, redirect to /login
+  GET  /dashboard     → show user dashboard (requires login, redirect to /login if not)
+  GET  /logout        → clear session, redirect to /login
+
+PRE-SEEDED DATA (must exist in memory when app starts):
+  User: name="Alice Smith", email="alice@test.com", password="password123"
+  Orders for alice: at least 2 orders with id, item_name, status, date fields
+
+REQUIRED HTML ELEMENTS (exact IDs - grader checks these):
+  Login page:
+    - <input name="email">
+    - <input name="password">
+    - <button id="login-btn">
+    - <div id="login-error"> (shown when credentials wrong)
+
+  Register page:
+    - <input name="name">
+    - <input name="email">
+    - <input name="password">
+    - <button id="register-btn">
+
+  Dashboard page:
+    - <span id="welcome-msg"> or element containing user's name
+    - <table id="orders-table">
+    - <tr class="order-row"> for each order
+    - <a id="logout-link" href="/logout"> or <a href="/logout">
+
+SESSIONS: Use Starlette SessionMiddleware (secret_key="vibe-secret-key-change-me")
+  - Store user email in session["user_email"] after login
+  - Clear it on logout
+
+FILES:
+  - main.py (FastAPI app)
+  - templates/login.html
+  - templates/register.html
+  - templates/dashboard.html
+
+TECH STACK: FastAPI, Jinja2, python-multipart, itsdangerous, uvicorn

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App</title>
+    <style>
+        /* TODO: Add your styles here */
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        /* Style the .completed class to show strikethrough */
+        .completed .todo-text {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <h1>My Todo List</h1>
+
+    <!-- Input area -->
+    <div class="input-area">
+        <input type="text" id="todo-input" placeholder="Add a new todo...">
+        <button id="add-btn">Add</button>
+    </div>
+
+    <!-- Stats -->
+    <p>Remaining: <span id="todo-count">0</span></p>
+
+    <!-- Todo list -->
+    <ul id="todo-list">
+        <!-- Todo items will be added here dynamically -->
+        <!-- Each item should have class="todo-item" -->
+        <!-- Each item needs: .todo-checkbox, .todo-text, .delete-btn -->
+    </ul>
+
+    <script>
+        // TODO: Implement the todo functionality
+        // Requirements:
+        // 1. #add-btn click → create new .todo-item with .todo-checkbox and .delete-btn
+        // 2. .todo-checkbox change → toggle .completed on parent .todo-item
+        // 3. .delete-btn click → remove the .todo-item
+        // 4. #todo-count → update to show count of non-completed items
+        // 5. Enter key on #todo-input → same as clicking #add-btn
+    </script>
+</body>
+</html>

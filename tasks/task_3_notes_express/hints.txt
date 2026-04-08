@@ -1,0 +1,71 @@
+HINTS for Notes Express task:
+
+1. SERVER SETUP:
+   const express = require('express');
+   const app = express();
+   app.use(express.json());
+   app.use(express.urlencoded({ extended: true }));
+
+2. PRE-SEEDED DATA:
+   let notes = [
+     { id: 1, title: "Welcome", content: "Welcome to Notes App!", date: "2024-01-01" },
+     { id: 2, title: "Getting Started", content: "Click Add Note to create your first note.", date: "2024-01-01" }
+   ];
+   let nextId = 3;
+
+3. API ROUTES:
+   app.get('/api/notes', (req, res) => res.json(notes));
+
+   app.post('/api/notes', (req, res) => {
+     const { title, content } = req.body;
+     const note = { id: nextId++, title, content, date: new Date().toISOString().split('T')[0] };
+     notes.push(note);
+     res.json(note);
+   });
+
+   app.delete('/api/notes/:id', (req, res) => {
+     const id = parseInt(req.params.id);
+     notes = notes.filter(n => n.id !== id);
+     res.json({ success: true });
+   });
+
+4. SERVE HTML - use res.send() with template literal:
+   app.get('/', (req, res) => {
+     res.send(`<!DOCTYPE html>...`);
+   });
+
+5. FRONTEND JAVASCRIPT (inline in the HTML):
+   async function loadNotes() {
+     const res = await fetch('/api/notes');
+     const notes = await res.json();
+     const container = document.getElementById('notes-container');
+     document.getElementById('note-count').textContent = notes.length;
+     container.innerHTML = notes.map(note => `
+       <div class="note-card">
+         <h3>${note.title}</h3>
+         <p>${note.content}</p>
+         <button class="delete-btn" onclick="deleteNote(${note.id})">Delete</button>
+       </div>
+     `).join('');
+   }
+
+   async function deleteNote(id) {
+     await fetch('/api/notes/' + id, { method: 'DELETE' });
+     loadNotes();
+   }
+
+   document.getElementById('add-note-btn').addEventListener('click', async () => {
+     const title = document.getElementById('note-title').value;
+     const content = document.getElementById('note-content').value;
+     await fetch('/api/notes', {
+       method: 'POST',
+       headers: {'Content-Type': 'application/json'},
+       body: JSON.stringify({ title, content })
+     });
+     loadNotes();
+   });
+
+   loadNotes(); // load on startup
+
+6. START SERVER:
+   app.listen(8000, () => console.log('Server running on port 8000'));
