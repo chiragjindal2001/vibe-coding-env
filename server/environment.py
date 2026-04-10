@@ -404,8 +404,14 @@ class VibeCodingEnvironment(Environment):
         target.write_text(content, encoding="utf-8")
 
         if self._framework == "python":
-            # uvicorn --reload detects the change within ~1 s
-            time.sleep(1.5)
+            # Wait for uvicorn --reload to pick up the change (slower on HF Space)
+            time.sleep(2.0)
+            if not self._wait_for_server(timeout=8):
+                return (
+                    f"Wrote {file_path} ({len(content)} chars)\n"
+                    "WARNING: server did not respond after write — possible import error in main.py. "
+                    "Check your imports and fix any missing dependencies."
+                )
         elif self._framework == "nodejs":
             # Node has no hot-reload; restart the server
             self._stop_server()

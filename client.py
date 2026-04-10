@@ -24,7 +24,7 @@ class VibeCodingClient:
         if task_id:
             payload["task_id"] = task_id
         payload.update(kwargs)
-        r = self._client.post(f"{self.base_url}/reset", json=payload, timeout=30.0)
+        r = self._client.post(f"{self.base_url}/reset", json=payload, timeout=90.0)
         r.raise_for_status()
         data = r.json()
         # OpenEnv wraps in {"observation": {...}}

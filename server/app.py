@@ -93,3 +93,12 @@ def schema():
         "observation": __import__("models").VibeCodingObservation.model_json_schema(),
         "state": __import__("models").VibeCodingState.model_json_schema(),
     }
+
+
+def main():
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=7860)
+
+
+if __name__ == "__main__":
+    main()

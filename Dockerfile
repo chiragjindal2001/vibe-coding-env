@@ -3,11 +3,11 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # ── System dependencies ────────────────────────────────────────────────────
-# nodejs/npm: needed to run task_3_notes_express (agent writes Express apps)
+# Install Node.js 20 via NodeSource (apt default is Node 12 which lacks full ES6+ support)
 # Playwright system deps are installed via playwright install --with-deps below
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        wget curl gnupg \
-        nodejs npm \
+RUN apt-get update && apt-get install -y --no-install-recommends wget curl gnupg \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Python dependencies ────────────────────────────────────────────────────
