@@ -454,7 +454,7 @@ def main() -> None:
     if args.all:
         tasks_to_run = [
             "task_1_todo_html",
-            "task_2_auth_fastapi",
+            "task_2_auth_express",
             "task_3_notes_express",
         ]
     elif args.task:

@@ -461,6 +461,14 @@ class VibeCodingEnvironment(Environment):
 
         task = TASKS.get(self._state.task_id, {})
 
+        # Restart server so grader sees clean initial state (not post-episode mutations)
+        # Only restart if server is currently healthy — don't restart with broken code
+        if self._wait_for_server(timeout=2):
+            self._stop_server()
+            time.sleep(0.5)
+            self._start_server()
+            self._wait_for_server(timeout=15)
+
         try:
             result = grade_submission(
                 page=self._page,
