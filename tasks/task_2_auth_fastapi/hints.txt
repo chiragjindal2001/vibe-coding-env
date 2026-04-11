@@ -1,52 +1,38 @@
-HINTS for Auth FastAPI task:
+HINTS for Auth Express task:
 
 1. SESSION SETUP (required):
-   from starlette.middleware.sessions import SessionMiddleware
-   app.add_middleware(SessionMiddleware, secret_key="vibe-secret-key-change-me")
+   const session = require('express-session');
+   app.use(session({ secret: 'vibe-secret-key', resave: false, saveUninitialized: false }));
 
 2. ACCESS SESSION in route handlers:
-   from starlette.requests import Request
-   @app.get("/dashboard")
-   async def dashboard(request: Request):
-       user_email = request.session.get("user_email")
-       if not user_email:
-           return RedirectResponse("/login")
+   app.get('/dashboard', (req, res) => {
+       if (!req.session.userEmail) return res.redirect('/login');
+       const user = users[req.session.userEmail];
+       // render dashboard HTML
+   });
 
-3. TEMPLATES SETUP:
-   from fastapi.templating import Jinja2Templates
-   templates = Jinja2Templates(directory="templates")
-   return templates.TemplateResponse("dashboard.html", {"request": request, "user": user})
-
-4. PRE-SEEDED DATA (put at module level):
-   USERS = {
-       "alice@test.com": {
-           "name": "Alice Smith",
-           "email": "alice@test.com",
-           "password": "password123"
-       }
-   }
-   ORDERS = {
-       "alice@test.com": [
-           {"id": 1, "item": "Laptop", "status": "Delivered", "date": "2024-01-15"},
-           {"id": 2, "item": "Mouse", "status": "Processing", "date": "2024-01-20"},
+3. PRE-SEEDED DATA (put at top of server.js):
+   const users = {
+       'alice@test.com': { name: 'Alice Smith', email: 'alice@test.com', password: 'password123' }
+   };
+   const orders = {
+       'alice@test.com': [
+           { id: 1, item_name: 'Laptop', status: 'Delivered', date: '2024-01-15' },
+           { id: 2, item_name: 'Mouse', status: 'Processing', date: '2024-01-20' }
        ]
-   }
+   };
 
-5. HTML TEMPLATE EXAMPLE (dashboard.html):
-   <h1 id="welcome-msg">Welcome, {{ user.name }}!</h1>
-   <table id="orders-table">
-     {% for order in orders %}
-     <tr class="order-row">
-       <td>{{ order.id }}</td>
-       <td>{{ order.item }}</td>
-       <td>{{ order.status }}</td>
-     </tr>
-     {% endfor %}
-   </table>
-   <a id="logout-link" href="/logout">Logout</a>
+4. INLINE HTML with template literals in res.send(`...`):
+   res.send(`<html>...<button id="login-btn">Login</button>...</html>`);
 
-6. REGISTER: Add new users to the USERS dict (in-memory, no DB needed)
+5. PARSE FORM DATA:
+   app.use(express.urlencoded({ extended: true }));
+   // Then in POST handler: req.body.email, req.body.password
 
-7. ERROR DISPLAY on login failure:
-   templates/login.html: {% if error %}<div id="login-error">{{ error }}</div>{% endif %}
-   Route: return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
+6. LOGIN ERROR (keep user on login page):
+   res.send(`...<div id="login-error">Invalid credentials</div>...`);
+
+7. LOGOUT:
+   req.session.destroy(() => res.redirect('/login'));
+
+8. REGISTER: Add new users to the users object (in-memory, no DB needed)

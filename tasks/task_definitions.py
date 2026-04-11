@@ -369,8 +369,8 @@ TASKS = {
     },
     "task_2_auth_fastapi": {
         "description": _read_requirement("task_2_auth_fastapi"),
-        "framework_hint": "Python FastAPI + Jinja2 templates. Files: main.py + templates/.",
-        "framework": "python",
+        "framework_hint": "Node.js + Express.js. Single server.js file. Run: node server.js.",
+        "framework": "nodejs",
         "skeleton_dir": "task_2_auth_fastapi/skeleton",
         "flows": [
             ("register_user", _auth_flow_register),

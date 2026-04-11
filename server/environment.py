@@ -403,10 +403,10 @@ class VibeCodingEnvironment(Environment):
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding="utf-8")
 
-        if self._framework == "python":
-            # Wait for uvicorn --reload to pick up the change (slower on HF Space)
-            time.sleep(2.0)
-            if not self._wait_for_server(timeout=8):
+        if self._framework == "python" and str(file_path).endswith(".py"):
+            # Only .py changes trigger uvicorn reload; templates/assets do not
+            time.sleep(2.5)
+            if not self._wait_for_server(timeout=20):
                 return (
                     f"Wrote {file_path} ({len(content)} chars)\n"
                     "WARNING: server did not respond after write — possible import error in main.py. "

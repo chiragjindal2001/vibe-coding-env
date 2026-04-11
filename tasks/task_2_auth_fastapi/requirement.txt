@@ -1,10 +1,10 @@
-Build a user authentication web app using FastAPI + Jinja2 templates.
+Build a user authentication web app using Node.js + Express.js.
 
 ROUTES REQUIRED:
   GET  /              → redirect to /login (or show landing page)
-  GET  /login         → show login form
+  GET  /login         → show login form (HTML page)
   POST /login         → authenticate user, redirect to /dashboard on success
-  GET  /register      → show registration form
+  GET  /register      → show registration form (HTML page)
   POST /register      → create new user, redirect to /login
   GET  /dashboard     → show user dashboard (requires login, redirect to /login if not)
   GET  /logout        → clear session, redirect to /login
@@ -32,14 +32,11 @@ REQUIRED HTML ELEMENTS (exact IDs - grader checks these):
     - <tr class="order-row"> for each order
     - <a id="logout-link" href="/logout"> or <a href="/logout">
 
-SESSIONS: Use Starlette SessionMiddleware (secret_key="vibe-secret-key-change-me")
-  - Store user email in session["user_email"] after login
-  - Clear it on logout
+SESSIONS: Use express-session
+  - Store user email in req.session.userEmail after login
+  - Destroy session on logout
 
 FILES:
-  - main.py (FastAPI app)
-  - templates/login.html
-  - templates/register.html
-  - templates/dashboard.html
+  - server.js (Express app, single file — inline all HTML using template literals)
 
-TECH STACK: FastAPI, Jinja2, python-multipart, itsdangerous, uvicorn
+TECH STACK: Node.js, Express.js, express-session
