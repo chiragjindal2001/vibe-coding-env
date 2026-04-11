@@ -29,8 +29,8 @@ from client import VibeCodingClient
 # ── Mandatory config from environment ──────────────────────────────────────
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-API_KEY      = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
-MODEL_NAME   = os.getenv("MODEL_NAME")
+API_KEY      = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY") or "dummy-key"
+MODEL_NAME   = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 ENV_URL      = os.getenv("ENV_URL", "http://0.0.0.0:7860")
 
 MAX_STEPS        = 20
@@ -231,7 +231,13 @@ def run_episode(
     if verbose:
         print(f"START {task_id}")
 
-    obs = env_client.reset(task_id=task_id)
+    try:
+        obs = env_client.reset(task_id=task_id)
+    except Exception as exc:
+        print(f"  reset failed for {task_id}: {exc}")
+        return {"task_id": task_id, "final_score": 0.0, "steps_taken": 0,
+                "flows_passing": 0, "flows_total": 0, "functional_score": 0.0,
+                "code_quality_score": 0.0, "visual_score": 0.0}
 
     if verbose:
         print(f"Description: {obs['task_description'][:200]}...")
@@ -403,7 +409,12 @@ def run_episode(
     if not obs.get("done", False):
         if verbose:
             print("\n  Step limit reached — forcing declare_done")
-        obs = env_client.step({"action_type": "declare_done"})
+        try:
+            obs = env_client.step({"action_type": "declare_done"})
+        except Exception as exc:
+            print(f"  declare_done failed: {exc}")
+            obs = {"reward": 0.0, "done": True, "flows_passing": 0, "flows_total": 0,
+                   "functional_score": 0.0, "code_quality_score": 0.0, "visual_score": 0.0}
         final_score = obs.get("reward", 0.0)
         if verbose:
             print(f"  Final score: {final_score:.3f}")
@@ -497,4 +508,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
