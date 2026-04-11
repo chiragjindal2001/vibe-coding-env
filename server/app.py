@@ -93,7 +93,31 @@ def schema():
         "observation": __import__("models").VibeCodingObservation.model_json_schema(),
         "state": __import__("models").VibeCodingState.model_json_schema(),
     }
-
+@app.get("/tasks")
+async def list_tasks():
+    return {"tasks": [
+        {
+            "task_id": "task_1_todo_html",
+            "name": "Todo List (HTML + JavaScript)",
+            "difficulty": "easy",
+            "language": "html",
+            "flows_total": 5
+        },
+        {
+            "task_id": "task_2_auth_express",
+            "name": "Auth System (Express.js)",
+            "difficulty": "medium",
+            "language": "nodejs",
+            "flows_total": 6
+        },
+        {
+            "task_id": "task_3_notes_express",
+            "name": "Notes App (Express.js)",
+            "difficulty": "hard",
+            "language": "nodejs",
+            "flows_total": 7
+        },
+    ]}
 
 def main():
     import uvicorn

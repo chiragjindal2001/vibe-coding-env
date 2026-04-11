@@ -4,3 +4,34 @@ type: space
 runtime: fastapi
 app: server.app:app
 port: 7860
+
+spec_version: 1
+name: vibe-coding-env
+type: space
+runtime: fastapi
+app: server.app:app
+port: 7860
+
+tasks:
+  - id: task_1_todo_html
+    name: "Todo List (HTML + JavaScript)"
+    difficulty: easy
+    language: html
+    flows_total: 4
+
+  - id: task_2_auth_express
+    name: "Auth System (Express.js)"
+    difficulty: medium
+    language: nodejs
+    flows_total: 5
+
+  - id: task_3_notes_express
+    name: "Notes App (Express.js + Node.js)"
+    difficulty: hard
+    language: nodejs
+    flows_total: 4
+
+reward:
+  type: shaped
+  description: >
+    0.70 * functional + 0.20 * code_quality + 0.10 * visual
