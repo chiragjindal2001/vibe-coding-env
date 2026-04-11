@@ -367,11 +367,11 @@ TASKS = {
             ("counter_updates", _todo_flow_counter),
         ]
     },
-    "task_2_auth_fastapi": {
-        "description": _read_requirement("task_2_auth_fastapi"),
+    "task_2_auth_express": {
+        "description": _read_requirement("task_2_auth_express"),
         "framework_hint": "Node.js + Express.js. Single server.js file. Run: node server.js.",
         "framework": "nodejs",
-        "skeleton_dir": "task_2_auth_fastapi/skeleton",
+        "skeleton_dir": "task_2_auth_express/skeleton",
         "flows": [
             ("register_user", _auth_flow_register),
             ("login_valid", _auth_flow_login),
