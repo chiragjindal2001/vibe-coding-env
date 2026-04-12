@@ -47,3 +47,4 @@ class VibeCodingState(State):
     cumulative_reward: float = 0.0
     concluded: bool = False
     workspace_files: list = Field(default_factory=list)
+    prev_partial_passing: int = 0

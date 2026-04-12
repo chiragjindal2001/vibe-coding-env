@@ -266,6 +266,7 @@ class VibeCodingEnvironment(Environment):
             cumulative_reward=0.0,
             concluded=False,
             workspace_files=self._list_workspace_files(),
+            prev_partial_passing=0,
         )
 
         return VibeCodingObservation(
@@ -289,6 +290,7 @@ class VibeCodingEnvironment(Environment):
         self._state.step_count += 1
         error: Optional[str] = None
         feedback: str = ""
+        step_reward: float = 0.0
 
         # Guard: ensure we have an action_type
         atype: str = getattr(action, "action_type", None) or ""
@@ -297,7 +299,7 @@ class VibeCodingEnvironment(Environment):
         else:
             try:
                 if atype == "write_file":
-                    feedback = self._do_write_file(
+                    feedback, step_reward = self._do_write_file(
                         action.file_path, action.file_content
                     )
 
@@ -362,6 +364,7 @@ class VibeCodingEnvironment(Environment):
         self._state.current_url = current_url
         done = self._state.concluded or self._state.step_count >= MAX_STEPS
 
+        self._state.cumulative_reward += step_reward
         return VibeCodingObservation(
             task_id=self._state.task_id,
             task_description="",
@@ -371,7 +374,7 @@ class VibeCodingEnvironment(Environment):
             page_title=self._safe_title(),
             feedback=feedback,
             last_action_error=error,
-            reward=0.0,
+            reward=step_reward,
             cumulative_reward=self._state.cumulative_reward,
             flows_passing=self._state.flows_passing,
             flows_total=self._state.flows_total,
@@ -387,29 +390,29 @@ class VibeCodingEnvironment(Environment):
 
     # ── Action implementations ─────────────────────────────────────────────
 
-    def _do_write_file(self, file_path: Optional[str], content: Optional[str]) -> str:
+    def _do_write_file(self, file_path: Optional[str], content: Optional[str]) -> tuple[str, float]:
         if not file_path:
-            return "Error: file_path is required"
+            return "Error: file_path is required", 0.0
         if content is None:
-            return "Error: file_content is required"
+            return "Error: file_content is required", 0.0
 
         # Prevent path traversal
         target = Path(self._workspace) / file_path
         try:
             target.resolve().relative_to(Path(self._workspace).resolve())
         except ValueError:
-            return "Error: path traversal outside workspace is not allowed"
+            return "Error: path traversal outside workspace is not allowed", 0.0
 
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding="utf-8")
 
+        server_warning = ""
         if self._framework == "python" and str(file_path).endswith(".py"):
             # Only .py changes trigger uvicorn reload; templates/assets do not
             time.sleep(2.5)
             if not self._wait_for_server(timeout=20):
-                return (
-                    f"Wrote {file_path} ({len(content)} chars)\n"
-                    "WARNING: server did not respond after write — possible import error in main.py. "
+                server_warning = (
+                    "\nWARNING: server did not respond after write — possible import error in main.py. "
                     "Check your imports and fix any missing dependencies."
                 )
         elif self._framework == "nodejs":
@@ -418,13 +421,28 @@ class VibeCodingEnvironment(Environment):
             time.sleep(0.3)
             self._start_server()
             if not self._wait_for_server(timeout=5):
-                return (
-                    f"Wrote {file_path} ({len(content)} chars)\n"
-                    "WARNING: server failed to start after write — likely a syntax error in server.js. "
+                server_warning = (
+                    "\nWARNING: server failed to start after write — likely a syntax error in server.js. "
                     "Use run_command with 'node --check server.js' to find the error, then fix and rewrite the file."
                 )
 
-        return f"Wrote {file_path} ({len(content)} chars)"
+        # ── Partial reward signal ──────────────────────────────────────────
+        step_reward = 0.0
+        partial_info = ""
+        try:
+            from graders.grader import run_partial_grader
+            now_passing, total = run_partial_grader(self._state.task_id, self._page)
+            prev = self._state.prev_partial_passing
+            delta = now_passing - prev
+            if total > 0:
+                raw_reward = delta / total          # ∈ [-1, +1]
+                step_reward = max(-0.1, min(0.3, raw_reward))
+            self._state.prev_partial_passing = now_passing
+            partial_info = f"\n[partial] checks {now_passing}/{total} (Δ{delta:+d}) → reward {step_reward:+.3f}"
+        except Exception:
+            pass
+
+        return f"Wrote {file_path} ({len(content)} chars){server_warning}{partial_info}", step_reward
 
     def _do_read_file(self, file_path: Optional[str]) -> str:
         if not file_path:

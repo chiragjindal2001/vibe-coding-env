@@ -128,3 +128,43 @@ def grade_submission(
         "flows_total": flows_total,
         "feedback": feedback,
     }
+
+
+def run_partial_grader(task_id: str, page) -> tuple[int, int]:
+    """
+    Fast 2-check grader for partial reward signal after write_file.
+    Returns (passing, total) where total is always 2.
+    Must complete in < 2 seconds total.
+
+    Check 1: HTTP ping — is the server responding?
+    Check 2: Primary element usability — can the user interact with the main input?
+    """
+    import urllib.request
+    from graders.usability import check_element_usability
+
+    passing = 0
+    total = 2
+
+    # Check 1: HTTP ping (~0.1s)
+    try:
+        urllib.request.urlopen(_HOME_URL + "/", timeout=1.5)
+        passing += 1
+    except Exception:
+        return 0, total  # Server not up — skip element check
+
+    # Check 2: Primary element usability (~0.5s)
+    primary_selectors = {
+        "task_1_todo_html":     "#todo-input",
+        "task_2_auth_express":  "input[name='email']",
+        "task_3_notes_express": "#note-title",
+    }
+    selector = primary_selectors.get(task_id, "body")
+    try:
+        page.goto(_HOME_URL + "/", wait_until="domcontentloaded", timeout=3000)
+        check = check_element_usability(page, selector)
+        if check.usable:
+            passing += 1
+    except Exception:
+        pass
+
+    return passing, total
