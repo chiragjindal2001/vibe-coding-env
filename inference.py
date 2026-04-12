@@ -289,7 +289,7 @@ def run_episode(
             "code_quality_score": 0.0, "visual_score": 0.0,
         }
 
-    vision: bool        = False   # safer default for text-only models
+    vision: bool        = True   
     array_content: bool = True
 
     user_text = (
