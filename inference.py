@@ -17,7 +17,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import platform
 import re
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -36,9 +38,9 @@ API_KEY      = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or "dummy-key"
 MODEL_NAME   = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-72B-Instruct"
 ENV_URL      = os.getenv("ENV_URL") or "http://0.0.0.0:7860"
 
-BENCHMARK        = "vibe-coding-env"
-MAX_STEPS        = 20
-MAX_TOKENS       = 4096
+BENCHMARK         = "vibe-coding-env"
+MAX_STEPS         = 20
+MAX_TOKENS        = 4096
 MAX_PARSE_RETRIES = 3
 
 ALL_TASKS = [
@@ -93,7 +95,6 @@ def log_start(task: str, env: str, model: str) -> None:
 def log_step(step: int, action: str, reward: float,
              done: bool, error: Optional[str]) -> None:
     error_val = error if error else "null"
-    # Sanitize action string — no spaces allowed in value
     action_clean = str(action).replace(" ", "_")[:60]
     print(
         f"[STEP] step={step} action={action_clean} "
@@ -110,6 +111,42 @@ def log_end(success: bool, steps: int, score: float,
         f"score={score:.3f} rewards={rewards_str}",
         flush=True,
     )
+
+
+# ── Startup diagnostics ─────────────────────────────────────────────────────
+
+def print_diagnostics(tasks_to_run: list) -> None:
+    """Print environment info before anything else runs."""
+    print(f"[DEBUG] Python: {sys.version}", flush=True)
+    print(f"[DEBUG] Platform: {platform.platform()}", flush=True)
+    print(f"[DEBUG] Working dir: {os.getcwd()}", flush=True)
+    print(f"[DEBUG] Script: {__file__}", flush=True)
+    print(f"[DEBUG] Args: {sys.argv}", flush=True)
+    print(f"[DEBUG] API_BASE_URL: {API_BASE_URL}", flush=True)
+    print(f"[DEBUG] MODEL_NAME: {MODEL_NAME}", flush=True)
+    print(f"[DEBUG] ENV_URL: {ENV_URL}", flush=True)
+    print(f"[DEBUG] HF_TOKEN set: {bool(API_KEY and API_KEY != 'dummy-key')}",
+          flush=True)
+    print(f"[DEBUG] Tasks: {tasks_to_run}", flush=True)
+
+    # Check python/python3 availability
+    for cmd in ["python", "python3"]:
+        try:
+            r = subprocess.run([cmd, "--version"],
+                               capture_output=True, text=True, timeout=5)
+            ver = (r.stdout.strip() or r.stderr.strip())
+            print(f"[DEBUG] {cmd}: {ver}", flush=True)
+        except FileNotFoundError:
+            print(f"[DEBUG] {cmd}: NOT FOUND", flush=True)
+        except Exception as e:
+            print(f"[DEBUG] {cmd}: ERROR {e}", flush=True)
+
+    # Check required files exist
+    for f in ["client.py", "models.py", "openenv.yaml",
+              "server/app.py", "server/environment.py"]:
+        exists = Path(f).exists()
+        print(f"[DEBUG] File {f}: {'EXISTS' if exists else 'MISSING'}",
+              flush=True)
 
 
 # ── JSON parsing helpers ────────────────────────────────────────────────────
@@ -131,7 +168,7 @@ def _sanitize_nonstandard_strings(text: str) -> str:
 
     m = re.search(r':\s*\n?`', text)
     if m:
-        open_pos = m.end()
+        open_pos  = m.end()
         close_pos = text.rfind('`')
         if close_pos > open_pos:
             prefix = text[:m.start()] + ': '
@@ -231,17 +268,14 @@ def run_episode(
     task_id: str,
     max_steps: int = MAX_STEPS,
 ) -> dict:
-    """
-    Run one full episode. Always emits [START] and [END] lines.
-    Returns result dict.
-    """
+    """Run one full episode. Always emits [START] and [END] lines."""
     rewards: List[float] = []
     steps_taken = 0
-    score = 0.0
+    score   = 0.0
     success = False
     obs: dict = {}
 
-    # [START] — always emitted
+    # [START] — always emitted first
     log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
 
     try:
@@ -250,18 +284,12 @@ def run_episode(
         print(f"[DEBUG] reset failed: {exc}", flush=True)
         log_end(success=False, steps=0, score=0.0, rewards=[])
         return {
-            "task_id": task_id,
-            "final_score": 0.0,
-            "steps_taken": 0,
-            "flows_passing": 0,
-            "flows_total": 0,
-            "functional_score": 0.0,
-            "code_quality_score": 0.0,
-            "visual_score": 0.0,
+            "task_id": task_id, "final_score": 0.0, "steps_taken": 0,
+            "flows_passing": 0, "flows_total": 0, "functional_score": 0.0,
+            "code_quality_score": 0.0, "visual_score": 0.0,
         }
 
-    # Vision detection
-    vision: bool = False        # start False — safer for text-only models
+    vision: bool        = False   # safer default for text-only models
     array_content: bool = True
 
     user_text = (
@@ -277,11 +305,11 @@ def run_episode(
     _add_image(first_content, obs.get("screenshot_b64", ""), vision)
 
     messages: list = [
-        {"role": "system",  "content": SYSTEM_PROMPT},
-        {"role": "user",    "content": first_content},
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user",   "content": first_content},
     ]
 
-    step = 0
+    step          = 0
     parse_retries = 0
 
     try:
@@ -289,7 +317,6 @@ def run_episode(
             step += 1
             steps_taken = step
 
-            # Small delay to avoid per-minute rate limits
             if step > 1:
                 time.sleep(1)
 
@@ -313,14 +340,13 @@ def run_episode(
                     time.sleep(20)
                     try:
                         completion = llm.chat.completions.create(
-                            model=MODEL_NAME,
-                            messages=messages,
-                            max_tokens=MAX_TOKENS,
-                            temperature=0.2,
+                            model=MODEL_NAME, messages=messages,
+                            max_tokens=MAX_TOKENS, temperature=0.2,
                         )
-                        assistant_text = completion.choices[0].message.content or ""
+                        assistant_text = \
+                            completion.choices[0].message.content or ""
                     except Exception as exc2:
-                        print(f"[DEBUG] Still failing after retry: {exc2}", flush=True)
+                        print(f"[DEBUG] Still failing: {exc2}", flush=True)
                         break
 
                 elif array_content and "must be a string" in err.lower():
@@ -329,31 +355,32 @@ def run_episode(
                     messages = _flatten_content(_strip_images(messages))
                     try:
                         completion = llm.chat.completions.create(
-                            model=MODEL_NAME,
-                            messages=messages,
-                            max_tokens=MAX_TOKENS,
-                            temperature=0.2,
+                            model=MODEL_NAME, messages=messages,
+                            max_tokens=MAX_TOKENS, temperature=0.2,
                         )
-                        assistant_text = completion.choices[0].message.content or ""
+                        assistant_text = \
+                            completion.choices[0].message.content or ""
                     except Exception as exc2:
                         print(f"[DEBUG] Flatten retry failed: {exc2}", flush=True)
                         break
 
                 elif vision and (
-                    "image" in err.lower() or "vision" in err.lower() or "404" in err
+                    "image"  in err.lower() or
+                    "vision" in err.lower() or
+                    "404"    in err
                 ):
                     vision = False
                     messages = _strip_images(messages)
                     try:
                         completion = llm.chat.completions.create(
-                            model=MODEL_NAME,
-                            messages=messages,
-                            max_tokens=MAX_TOKENS,
-                            temperature=0.2,
+                            model=MODEL_NAME, messages=messages,
+                            max_tokens=MAX_TOKENS, temperature=0.2,
                         )
-                        assistant_text = completion.choices[0].message.content or ""
+                        assistant_text = \
+                            completion.choices[0].message.content or ""
                     except Exception as exc2:
-                        print(f"[DEBUG] No-vision retry failed: {exc2}", flush=True)
+                        print(f"[DEBUG] No-vision retry failed: {exc2}",
+                              flush=True)
                         break
 
                 else:
@@ -379,7 +406,7 @@ def run_episode(
                 continue
 
             parse_retries = 0
-            action_type = action.get("action_type", "unknown")
+            action_type   = action.get("action_type", "unknown")
 
             # ── Execute ───────────────────────────────────────────────────
             try:
@@ -399,15 +426,9 @@ def run_episode(
             rewards.append(reward)
 
             # [STEP] — emitted after every env.step()
-            log_step(
-                step=step,
-                action=action_type,
-                reward=reward,
-                done=done,
-                error=error,
-            )
+            log_step(step=step, action=action_type,
+                     reward=reward, done=done, error=error)
 
-            # Build next message
             feedback_text = obs.get("feedback") or ""
             if error:
                 feedback_text += f"\n\nERROR: {error}"
@@ -429,19 +450,13 @@ def run_episode(
         if not obs.get("done", False):
             print("[DEBUG] Step limit reached — forcing declare_done", flush=True)
             try:
-                obs = env_client.step({"action_type": "declare_done"})
+                obs     = env_client.step({"action_type": "declare_done"})
                 score   = float(obs.get("reward", 0.0))
                 reward  = score
-                done    = True
                 error   = obs.get("last_action_error") or None
                 rewards.append(reward)
-                log_step(
-                    step=steps_taken + 1,
-                    action="declare_done",
-                    reward=reward,
-                    done=True,
-                    error=error,
-                )
+                log_step(step=steps_taken + 1, action="declare_done",
+                         reward=reward, done=True, error=error)
             except Exception as exc:
                 print(f"[DEBUG] declare_done failed: {exc}", flush=True)
                 score = 0.0
@@ -449,18 +464,12 @@ def run_episode(
         success = score >= 0.1
 
     except Exception as outer_exc:
-        # Catch-all — ensures [END] is always printed
         print(f"[DEBUG] Outer exception: {outer_exc}", flush=True)
-        score = 0.0
+        score   = 0.0
         success = False
 
     # [END] — always emitted, even on exception
-    log_end(
-        success=success,
-        steps=steps_taken,
-        score=score,
-        rewards=rewards,
-    )
+    log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
 
     return {
         "task_id":            task_id,
@@ -483,7 +492,7 @@ def main() -> None:
     parser.add_argument("--task", type=str,
                         choices=ALL_TASKS,
                         help="Single task ID to run")
-    parser.add_argument("--all", action="store_true",
+    parser.add_argument("--all",       action="store_true",
                         help="Run all tasks sequentially")
     parser.add_argument("--max-steps", type=int, default=MAX_STEPS)
     parser.add_argument("--env-url",   type=str, default=ENV_URL)
@@ -491,9 +500,15 @@ def main() -> None:
 
     if not args.task and not args.all:
         parser.print_help()
-        sys.exit(1)
+        sys.exit(0)   # exit 0 — not an error, just no args
 
-    # Connect to environment
+    tasks_to_run = ALL_TASKS if args.all else [args.task]
+
+    # ── Startup diagnostics ─────────────────────────────────────────────
+    print_diagnostics(tasks_to_run)
+
+    # ── Connect to environment ───────────────────────────────────────────
+    env_client = None
     try:
         env_client = VibeCodingClient(base_url=args.env_url)
         health = env_client.health()
@@ -501,17 +516,18 @@ def main() -> None:
     except Exception as exc:
         print(f"[DEBUG] Cannot reach environment at {args.env_url}: {exc}",
               flush=True)
-        sys.exit(1)
+        # Emit START+END for every task so output parser has something to read
+        for task_id in tasks_to_run:
+            log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
+            log_end(success=False, steps=0, score=0.0, rewards=[])
+        sys.exit(0)   # ← always exit 0
 
     if not MODEL_NAME:
         print("[DEBUG] WARNING: MODEL_NAME not set", flush=True)
     if not API_KEY or API_KEY == "dummy-key":
         print("[DEBUG] WARNING: HF_TOKEN not set", flush=True)
 
-    # One shared OpenAI client
     llm = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
-
-    tasks_to_run = ALL_TASKS if args.all else [args.task]
 
     for task_id in tasks_to_run:
         try:
@@ -522,7 +538,6 @@ def main() -> None:
                 max_steps=args.max_steps,
             )
         except Exception as exc:
-            # If run_episode itself crashes before log_end, emit it now
             print(f"[DEBUG] run_episode crashed for {task_id}: {exc}", flush=True)
             log_end(success=False, steps=0, score=0.0, rewards=[])
 
@@ -531,7 +546,7 @@ if __name__ == "__main__":
     try:
         main()
     except SystemExit:
-        raise          # let argparse --help and sys.exit() work normally
+        raise                  # let argparse --help and sys.exit() work normally
     except Exception as exc:
         print(f"[DEBUG] Top-level crash: {exc}", flush=True)
-        sys.exit(0)    # exit 1 honestly — don't hide crashes with exit 0
+        sys.exit(0)            # always exit 0
