@@ -493,14 +493,14 @@ def main() -> None:
                         choices=ALL_TASKS,
                         help="Single task ID to run")
     parser.add_argument("--all",       action="store_true",
-                        help="Run all tasks sequentially")
+                        help="Run all tasks sequentially (default)")
     parser.add_argument("--max-steps", type=int, default=MAX_STEPS)
     parser.add_argument("--env-url",   type=str, default=ENV_URL)
     args = parser.parse_args()
 
-    if not args.task and not args.all:
-        parser.print_help()
-        sys.exit(0)   # exit 0 — not an error, just no args
+    # Default: run all tasks if no specific task given
+    if not args.task:
+        args.all = True
 
     tasks_to_run = ALL_TASKS if args.all else [args.task]
 
@@ -520,7 +520,7 @@ def main() -> None:
         for task_id in tasks_to_run:
             log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
             log_end(success=False, steps=0, score=0.0, rewards=[])
-        sys.exit(0)   # ← always exit 0
+        sys.exit(0)
 
     if not MODEL_NAME:
         print("[DEBUG] WARNING: MODEL_NAME not set", flush=True)
@@ -539,6 +539,7 @@ def main() -> None:
             )
         except Exception as exc:
             print(f"[DEBUG] run_episode crashed for {task_id}: {exc}", flush=True)
+            log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
             log_end(success=False, steps=0, score=0.0, rewards=[])
 
 
@@ -546,7 +547,7 @@ if __name__ == "__main__":
     try:
         main()
     except SystemExit:
-        raise                  # let argparse --help and sys.exit() work normally
+        raise
     except Exception as exc:
         print(f"[DEBUG] Top-level crash: {exc}", flush=True)
-        sys.exit(0)            # always exit 0
+        sys.exit(0)
